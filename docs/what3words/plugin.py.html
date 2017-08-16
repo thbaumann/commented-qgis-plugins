@@ -1,0 +1,201 @@
+<html>
+<head>
+<meta charset="utf-8">
+<title></title>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
+<script src="https://rawgit.com/google/code-prettify/master/loader/run_prettify.js?autoload=true&amp;skin=desert&amp;lang=css" defer></script>
+<body>
+<pre class="prettyprint">
+from __future__ import absolute_import
+from builtins import object
+
+import os
+import webbrowser
+
+from qgis.PyQt.QtCore import <a href='http://geoapis.sourcepole.com/pyqt/qt'>Qt</a>
+from qgis.PyQt.QtGui import <a href='http://geoapis.sourcepole.com/pyqt/qicon'>QIcon</a>
+from qgis.PyQt.QtWidgets import <a href='http://geoapis.sourcepole.com/pyqt/qaction'><a href='http://geoapis.sourcepole.com/pyqt/qaction'>QAction</a></a>
+
+from qgis.gui import <a href='http://geoapis.sourcepole.com/qgispyapi/qgsmessagebar'>QgsMessageBar</a>
+from qgis.core import <a href='http://geoapis.sourcepole.com/qgispyapi/qgsapplication'>QgsApplication</a>
+from qgis.utils import iface
+
+from what3words.maptool import W3WMapTool
+from what3words.coorddialog import W3WCoordInputDialog
+
+from qgiscommons.gui import (addAboutMenu,
+                             removeAboutMenu,
+                             addHelpMenu,
+                             removeHelpMenu)
+from qgiscommons.settings import (readSettings,
+                                  pluginSetting)
+from qgiscommons.gui.settings import (addSettingsMenu,
+                                    removeSettingsMenu)
+
+#Processing might not be installed, so we only add the Processing provider if Processing is available
+try:
+    from processing.core.Processing import Processing
+    from what3words.processingprovider.w3wprovider import W3WProvider
+    processingOk = True
+except:
+    processingOk = False
+
+class W3WTools(object):
+
+    def __init__(self, iface):
+
+        '''
+        This plugin has tests that use the Tester plugin. If the plugin is 
+        available and loaded, tests are added to it. Otherwise, they are 
+        ignored
+        '''
+        try:
+            from what3words.tests import testerplugin
+            from qgistester.tests import addTestModule
+            addTestModule(testerplugin, "what3words")
+        except:
+            pass
+
+        self.mapTool = None
+        '''
+        Create the Processing provider if Processing is availabel and loaded
+        '''
+        if processingOk:
+            self.provider = W3WProvider()
+
+        '''
+        This must be added in the __init__ method, to tell the qgiscommons
+        library that it has to load the settings for this plugin. It will find
+        them automatically in a file named 'settings.json' in the plugin folder
+        '''
+        readSettings()
+
+    def initGui(self):
+        '''
+        Here wew add the main menu entry, used to enable the map tool to 
+        capture coordinates
+        '''
+        mapToolIcon = <a href='http://geoapis.sourcepole.com/pyqt/qicon'>QIcon</a>(os.path.join(os.path.dirname(__file__), "icons", "w3w.png"))
+        self.toolAction = <a href='http://geoapis.sourcepole.com/pyqt/qaction'><a href='http://geoapis.sourcepole.com/pyqt/qaction'>QAction</a></a>(mapToolIcon, "what3words map tool",
+                                     iface.<a href='http://geoapis.sourcepole.com/qgispyapi/qgisinterface#QgisInterface.mainWindow'>mainWindow</a>())
+        self.toolAction.triggered.<a href="javascript://" data-toggle="popover" title="connect" data-content="<ul><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsgpsconnection#QgsGPSConnection.connect'>QgsGPSConnection.connect()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qobject#connect'>QObject.connect()</a></li></ul>">connect</a>(self.setTool)
+        
+        #checkable = true, so it indicates whether the maptool is active or not
+        self.toolAction.<a href="javascript://" data-toggle="popover" title="setCheckable" data-content="<ul><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsdetaileditemdata#QgsDetailedItemData.setCheckable'>QgsDetailedItemData.setCheckable()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qabstractbutton#setCheckable'>QAbstractButton.setCheckable()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qgroupbox#setCheckable'>QGroupBox.setCheckable()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qstandarditem#setCheckable'>QStandardItem.setCheckable()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qaction#setCheckable'>QAction.setCheckable()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qabstractbutton#setCheckable'>QAbstractButton.setCheckable()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qgroupbox#setCheckable'>QGroupBox.setCheckable()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qaction#setCheckable'>QAction.setCheckable()</a></li></ul>">setCheckable</a>(True) 
+
+        iface.<a href='http://geoapis.sourcepole.com/qgispyapi/qgisinterface#QgisInterface.addToolBarIcon'>addToolBarIcon</a>(self.toolAction)
+        iface.<a href='http://geoapis.sourcepole.com/qgispyapi/qgisinterface#QgisInterface.addPluginToMenu'>addPluginToMenu</a>("what3words", self.toolAction)
+
+        '''And here we add another tool to zoom to a w3w address'''
+        zoomToIcon = <a href='http://geoapis.sourcepole.com/pyqt/qicon'>QIcon</a>(':/images/themes/default/mActionZoomIn.svg')
+        self.zoomToAction = <a href='http://geoapis.sourcepole.com/pyqt/qaction'><a href='http://geoapis.sourcepole.com/pyqt/qaction'>QAction</a></a>(zoomToIcon, "Zoom to 3 word address",
+                                     iface.<a href='http://geoapis.sourcepole.com/qgispyapi/qgisinterface#QgisInterface.mainWindow'>mainWindow</a>())
+        self.zoomToAction.triggered.<a href="javascript://" data-toggle="popover" title="connect" data-content="<ul><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsgpsconnection#QgsGPSConnection.connect'>QgsGPSConnection.connect()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qobject#connect'>QObject.connect()</a></li></ul>">connect</a>(self.zoomTo)
+        iface.<a href='http://geoapis.sourcepole.com/qgispyapi/qgisinterface#QgisInterface.addPluginToMenu'>addPluginToMenu</a>("what3words", self.zoomToAction)
+
+        #Standard plugin menus provided by the qgiscommons library
+        addSettingsMenu("what3words", iface.addPluginToMenu)
+        addHelpMenu("what3words", iface.addPluginToMenu)
+        addAboutMenu("what3words", iface.addPluginToMenu)
+
+        '''
+        This plugin uses a maptool. When another maptool is selected, our 
+        plugin maptool will be disconnected, and we need to update the menu 
+        entry, so it does not show itself as enabled. When the new tool is set, 
+        it will fire a signal. We connect it to our unsetTool method, which 
+        will handle this.
+        '''
+        iface.<a href="javascript://" data-toggle="popover" title="mapCanvas" data-content="<ul><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgslayertreemapcanvasbridge#QgsLayerTreeMapCanvasBridge.mapCanvas'>QgsLayerTreeMapCanvasBridge.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsdatadefinedvaluedialog#QgsDataDefinedValueDialog.mapCanvas'>QgsDataDefinedValueDialog.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsrendererv2widget#QgsRendererV2Widget.mapCanvas'>QgsRendererV2Widget.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgssymbollayerv2widget#QgsSymbolLayerV2Widget.mapCanvas'>QgsSymbolLayerV2Widget.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsattributetablefiltermodel#QgsAttributeTableFilterModel.mapCanvas'>QgsAttributeTableFilterModel.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsdatadefinedassistant#QgsDataDefinedAssistant.mapCanvas'>QgsDataDefinedAssistant.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgisinterface#QgisInterface.mapCanvas'>QgisInterface.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgssymbolslistwidget#QgsSymbolsListWidget.mapCanvas'>QgsSymbolsListWidget.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsrasterrendererwidget#QgsRasterRendererWidget.mapCanvas'>QgsRasterRendererWidget.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsrasterminmaxwidget#QgsRasterMinMaxWidget.mapCanvas'>QgsRasterMinMaxWidget.mapCanvas()</a></li></ul>">mapCanvas</a>().mapToolSet.<a href="javascript://" data-toggle="popover" title="connect" data-content="<ul><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsgpsconnection#QgsGPSConnection.connect'>QgsGPSConnection.connect()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qobject#connect'>QObject.connect()</a></li></ul>">connect</a>(self.unsetTool)
+
+        '''
+        We use a docked widget. We create it here and hide it, so when it is 
+        called by the user, it is just set to visible and will be displayed in 
+        its corresponding location in the app window.
+        '''
+        self.zoomToDialog = W3WCoordInputDialog(iface.<a href="javascript://" data-toggle="popover" title="mapCanvas" data-content="<ul><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgslayertreemapcanvasbridge#QgsLayerTreeMapCanvasBridge.mapCanvas'>QgsLayerTreeMapCanvasBridge.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsdatadefinedvaluedialog#QgsDataDefinedValueDialog.mapCanvas'>QgsDataDefinedValueDialog.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsrendererv2widget#QgsRendererV2Widget.mapCanvas'>QgsRendererV2Widget.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgssymbollayerv2widget#QgsSymbolLayerV2Widget.mapCanvas'>QgsSymbolLayerV2Widget.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsattributetablefiltermodel#QgsAttributeTableFilterModel.mapCanvas'>QgsAttributeTableFilterModel.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsdatadefinedassistant#QgsDataDefinedAssistant.mapCanvas'>QgsDataDefinedAssistant.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgisinterface#QgisInterface.mapCanvas'>QgisInterface.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgssymbolslistwidget#QgsSymbolsListWidget.mapCanvas'>QgsSymbolsListWidget.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsrasterrendererwidget#QgsRasterRendererWidget.mapCanvas'>QgsRasterRendererWidget.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsrasterminmaxwidget#QgsRasterMinMaxWidget.mapCanvas'>QgsRasterMinMaxWidget.mapCanvas()</a></li></ul>">mapCanvas</a>(), iface.<a href='http://geoapis.sourcepole.com/qgispyapi/qgisinterface#QgisInterface.mainWindow'>mainWindow</a>())
+        iface.<a href="javascript://" data-toggle="popover" title="addDockWidget" data-content="<ul><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgisinterface#QgisInterface.addDockWidget'>QgisInterface.addDockWidget()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qmainwindow#addDockWidget'>QMainWindow.addDockWidget()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qmainwindow#addDockWidget'>QMainWindow.addDockWidget()</a></li></ul>">addDockWidget</a>(<a href='http://geoapis.sourcepole.com/pyqt/qt'>Qt</a>.TopDockWidgetArea, self.zoomToDialog)
+        self.zoomToDialog.<a href="javascript://" data-toggle="popover" title="hide" data-content="<ul><li><a href='http://geoapis.sourcepole.com/pyqt/qsystemtrayicon#hide'>QSystemTrayIcon.hide()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qwidget#hide'>QWidget.hide()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qgraphicsitem#hide'>QGraphicsItem.hide()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qsystemtrayicon#hide'>QSystemTrayIcon.hide()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qgraphicsitem#hide'>QGraphicsItem.hide()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qwidget#hide'>QWidget.hide()</a></li></ul>">hide</a>()
+
+        '''Add the Processing provider if Processing is availabel and loaded'''
+        if processingOk:
+            Processing.<a href="javascript://" data-toggle="popover" title="addProvider" data-content="<ul><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsdataitemproviderregistry#QgsDataItemProviderRegistry.addProvider'>QgsDataItemProviderRegistry.addProvider()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgslayertreeembeddedwidgetregistry#QgsLayerTreeEmbeddedWidgetRegistry.addProvider'>QgsLayerTreeEmbeddedWidgetRegistry.addProvider()</a></li></ul>">addProvider</a>(self.provider)
+
+
+    def zoomTo(self):
+        apikey = pluginSetting("apiKey")
+        if apikey is None or apikey == "":
+            self._showMessage('what3words API key is not set. Please set it and try again.', <a href='http://geoapis.sourcepole.com/qgispyapi/qgsmessagebar'>QgsMessageBar</a>.WARNING)
+            return
+        self.zoomToDialog.setApiKey(apikey)
+        self.zoomToDialog.<a href="javascript://" data-toggle="popover" title="show" data-content="<ul><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsattributedialog#QgsAttributeDialog.show'>QgsAttributeDialog.show()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgserrordialog#QgsErrorDialog.show'>QgsErrorDialog.show()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qsystemtrayicon#show'>QSystemTrayIcon.show()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qwidget#show'>QWidget.show()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qgraphicsitem#show'>QGraphicsItem.show()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qsystemtrayicon#show'>QSystemTrayIcon.show()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qgraphicsitem#show'>QGraphicsItem.show()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qwidget#show'>QWidget.show()</a></li></ul>">show</a>()
+
+    def unsetTool(self, tool):
+        try:
+            if not isinstance(tool, W3WMapTool):
+                self.toolAction.<a href="javascript://" data-toggle="popover" title="setChecked" data-content="<ul><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsdetaileditemwidget#QgsDetailedItemWidget.setChecked'>QgsDetailedItemWidget.setChecked()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsdetaileditemdata#QgsDetailedItemData.setChecked'>QgsDetailedItemData.setChecked()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qabstractbutton#setChecked'>QAbstractButton.setChecked()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qgroupbox#setChecked'>QGroupBox.setChecked()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qaction#setChecked'>QAction.setChecked()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qabstractbutton#setChecked'>QAbstractButton.setChecked()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qgroupbox#setChecked'>QGroupBox.setChecked()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qaction#setChecked'>QAction.setChecked()</a></li></ul>">setChecked</a>(False)
+        except:
+            # ignore exceptions thrown when unloading plugin, since
+            # map tool class might not exist already
+            pass
+
+    def setTool(self):
+        apikey = pluginSetting("apiKey")
+        if apikey is None or apikey == "":
+            self._showMessage('what3words API key is not set. Please set it and try again.', <a href='http://geoapis.sourcepole.com/qgispyapi/qgsmessagebar'>QgsMessageBar</a>.WARNING)
+            return
+
+        #Create the map tool if needed
+        if self.mapTool is None:
+            self.mapTool = W3WMapTool(iface.<a href="javascript://" data-toggle="popover" title="mapCanvas" data-content="<ul><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgslayertreemapcanvasbridge#QgsLayerTreeMapCanvasBridge.mapCanvas'>QgsLayerTreeMapCanvasBridge.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsdatadefinedvaluedialog#QgsDataDefinedValueDialog.mapCanvas'>QgsDataDefinedValueDialog.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsrendererv2widget#QgsRendererV2Widget.mapCanvas'>QgsRendererV2Widget.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgssymbollayerv2widget#QgsSymbolLayerV2Widget.mapCanvas'>QgsSymbolLayerV2Widget.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsattributetablefiltermodel#QgsAttributeTableFilterModel.mapCanvas'>QgsAttributeTableFilterModel.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsdatadefinedassistant#QgsDataDefinedAssistant.mapCanvas'>QgsDataDefinedAssistant.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgisinterface#QgisInterface.mapCanvas'>QgisInterface.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgssymbolslistwidget#QgsSymbolsListWidget.mapCanvas'>QgsSymbolsListWidget.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsrasterrendererwidget#QgsRasterRendererWidget.mapCanvas'>QgsRasterRendererWidget.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsrasterminmaxwidget#QgsRasterMinMaxWidget.mapCanvas'>QgsRasterMinMaxWidget.mapCanvas()</a></li></ul>">mapCanvas</a>())
+        #Change the menu item so it shows that the tool is active
+        self.toolAction.<a href="javascript://" data-toggle="popover" title="setChecked" data-content="<ul><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsdetaileditemwidget#QgsDetailedItemWidget.setChecked'>QgsDetailedItemWidget.setChecked()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsdetaileditemdata#QgsDetailedItemData.setChecked'>QgsDetailedItemData.setChecked()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qabstractbutton#setChecked'>QAbstractButton.setChecked()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qgroupbox#setChecked'>QGroupBox.setChecked()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qaction#setChecked'>QAction.setChecked()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qabstractbutton#setChecked'>QAbstractButton.setChecked()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qgroupbox#setChecked'>QGroupBox.setChecked()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qaction#setChecked'>QAction.setChecked()</a></li></ul>">setChecked</a>(True)
+        #Set the tool as the active map tool
+        iface.<a href="javascript://" data-toggle="popover" title="mapCanvas" data-content="<ul><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgslayertreemapcanvasbridge#QgsLayerTreeMapCanvasBridge.mapCanvas'>QgsLayerTreeMapCanvasBridge.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsdatadefinedvaluedialog#QgsDataDefinedValueDialog.mapCanvas'>QgsDataDefinedValueDialog.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsrendererv2widget#QgsRendererV2Widget.mapCanvas'>QgsRendererV2Widget.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgssymbollayerv2widget#QgsSymbolLayerV2Widget.mapCanvas'>QgsSymbolLayerV2Widget.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsattributetablefiltermodel#QgsAttributeTableFilterModel.mapCanvas'>QgsAttributeTableFilterModel.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsdatadefinedassistant#QgsDataDefinedAssistant.mapCanvas'>QgsDataDefinedAssistant.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgisinterface#QgisInterface.mapCanvas'>QgisInterface.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgssymbolslistwidget#QgsSymbolsListWidget.mapCanvas'>QgsSymbolsListWidget.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsrasterrendererwidget#QgsRasterRendererWidget.mapCanvas'>QgsRasterRendererWidget.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsrasterminmaxwidget#QgsRasterMinMaxWidget.mapCanvas'>QgsRasterMinMaxWidget.mapCanvas()</a></li></ul>">mapCanvas</a>().<a href='http://geoapis.sourcepole.com/qgispyapi/qgsmapcanvas#QgsMapCanvas.setMapTool'>setMapTool</a>(self.mapTool)
+
+    def unload(self):
+        '''
+        Here we put all the actions to be performed when the plugin is unloaded
+        '''
+        #
+        iface.<a href="javascript://" data-toggle="popover" title="mapCanvas" data-content="<ul><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgslayertreemapcanvasbridge#QgsLayerTreeMapCanvasBridge.mapCanvas'>QgsLayerTreeMapCanvasBridge.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsdatadefinedvaluedialog#QgsDataDefinedValueDialog.mapCanvas'>QgsDataDefinedValueDialog.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsrendererv2widget#QgsRendererV2Widget.mapCanvas'>QgsRendererV2Widget.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgssymbollayerv2widget#QgsSymbolLayerV2Widget.mapCanvas'>QgsSymbolLayerV2Widget.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsattributetablefiltermodel#QgsAttributeTableFilterModel.mapCanvas'>QgsAttributeTableFilterModel.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsdatadefinedassistant#QgsDataDefinedAssistant.mapCanvas'>QgsDataDefinedAssistant.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgisinterface#QgisInterface.mapCanvas'>QgisInterface.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgssymbolslistwidget#QgsSymbolsListWidget.mapCanvas'>QgsSymbolsListWidget.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsrasterrendererwidget#QgsRasterRendererWidget.mapCanvas'>QgsRasterRendererWidget.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsrasterminmaxwidget#QgsRasterMinMaxWidget.mapCanvas'>QgsRasterMinMaxWidget.mapCanvas()</a></li></ul>">mapCanvas</a>().<a href='http://geoapis.sourcepole.com/qgispyapi/qgsmapcanvas#QgsMapCanvas.unsetMapTool'>unsetMapTool</a>(self.mapTool)
+        
+        '''Remove menus and buttons'''
+        iface.<a href='http://geoapis.sourcepole.com/qgispyapi/qgisinterface#QgisInterface.removeToolBarIcon'>removeToolBarIcon</a>(self.toolAction)
+        iface.<a href='http://geoapis.sourcepole.com/qgispyapi/qgisinterface#QgisInterface.removePluginMenu'>removePluginMenu</a>("what3words", self.toolAction)
+        iface.<a href='http://geoapis.sourcepole.com/qgispyapi/qgisinterface#QgisInterface.removePluginMenu'>removePluginMenu</a>("what3words", self.zoomToAction)
+
+        '''Remove qgiscommons menus'''
+        removeSettingsMenu("what3words")
+        removeHelpMenu("what3words")
+        removeAboutMenu("what3words")
+
+        '''Remove the main plugin widget'''
+        iface.<a href="javascript://" data-toggle="popover" title="removeDockWidget" data-content="<ul><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgisinterface#QgisInterface.removeDockWidget'>QgisInterface.removeDockWidget()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qmainwindow#removeDockWidget'>QMainWindow.removeDockWidget()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qmainwindow#removeDockWidget'>QMainWindow.removeDockWidget()</a></li></ul>">removeDockWidget</a>(self.zoomToDialog)
+
+        '''Remove processing provider'''
+        if processingOk:
+            Processing.<a href="javascript://" data-toggle="popover" title="removeProvider" data-content="<ul><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsdataitemproviderregistry#QgsDataItemProviderRegistry.removeProvider'>QgsDataItemProviderRegistry.removeProvider()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgslayertreeembeddedwidgetregistry#QgsLayerTreeEmbeddedWidgetRegistry.removeProvider'>QgsLayerTreeEmbeddedWidgetRegistry.removeProvider()</a></li></ul>">removeProvider</a>(self.provider)
+
+        '''Remove tests'''
+        try:
+            from what3words.tests import testerplugin
+            from qgistester.tests import removeTestModule
+            removeTestModule(testerplugin, "what3words")
+        except:
+            pass
+
+
+    def _showMessage(self, message, level=<a href='http://geoapis.sourcepole.com/qgispyapi/qgsmessagebar'>QgsMessageBar</a>.INFO):
+        iface.<a href='http://geoapis.sourcepole.com/qgispyapi/qgisinterface#QgisInterface.messageBar'>messageBar</a>().<a href="javascript://" data-toggle="popover" title="pushMessage" data-content="<ul><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgspluginmanagerinterface#QgsPluginManagerInterface.pushMessage'>QgsPluginManagerInterface.pushMessage()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsmessagebar#QgsMessageBar.pushMessage'>QgsMessageBar.pushMessage()</a></li></ul>">pushMessage</a>(
+            message, level, iface.<a href='http://geoapis.sourcepole.com/qgispyapi/qgisinterface#QgisInterface.messageTimeout'>messageTimeout</a>())
+
+</pre>
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>
+<script>
+$(document).ready(function(){
+    $('[data-toggle="popover"]').popover({html:true}); 
+});
+</script>
+</body>

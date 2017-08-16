@@ -1,0 +1,9 @@
+[
+    {"name":"apiKey",
+     "label": "API Key",
+     "description": "what3words API key",
+     "type": "string",
+     "default": "",
+     "group": "General"
+    }
+]

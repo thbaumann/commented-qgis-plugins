@@ -1,0 +1,21 @@
+[general]
+name=What3words Tools
+description=Enables what3words three word addresses in QGIS
+about=<p>what3words is a global grid of 57 trillion 3mx3m squares. Each square has a 3 word address that can be communicated quickly, easily and with no ambiguity. Their geocoder turns geographic coordinates into 3 word addresses and vice-versa. Our plugin lets you work with the addresses within QGIS.</p>
+category=Plugins
+qgisMinimumVersion=2.0
+version=1.3
+roles=desktop-qgis-plugin-w3w
+
+author=Boundless (Victor Olaya)
+email=info@boundlessgeo.com
+
+icon=icons/desktop.svg
+tags=boundless,what3words,address
+
+homepage=https://connect.boundlessgeo.com/docs/desktop/plugins/what3words/
+tracker=https://github.com/boundlessgeo/qgis-what3words-plugin/issues
+repository=https://github.com/boundlessgeo/qgis-what3words-plugin
+
+experimental=False
+deprecated=False

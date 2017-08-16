@@ -1,11 +1,12 @@
 from qgis import core, gui
+from qgis.PyQt import QtCore, QtGui, QtWidgets
 from collections import defaultdict
 import inspect
 import sip
 
 classes = []
 methods = defaultdict(list)
-modules = [core, gui]
+modules = [core, gui, QtCore, QtGui, QtWidgets]
 for m in modules:
 	for k in m.__dict__.keys():
 	    v = m.__dict__[k]
@@ -15,9 +16,11 @@ for m in modules:
 	            if  "sip.methoddescriptor" in str(type(v2)): 
 	                methods[k2].append(k)
 
+#methods = {k:v for k,v in methods.iteritems() if len(v) == 1}
+
 import json
-with open('d:\\classes.json', 'w') as outfile:
+with open('/Users/volaya/github/commented-qgis-plugins/_build/classes.json', 'w') as outfile:
     json.dump(classes, outfile)
     
-with open('d:\\methods.json', 'w') as outfile:
+with open('/Users/volaya/github/commented-qgis-plugins/_build/methods.json', 'w') as outfile:
     json.dump(methods, outfile)

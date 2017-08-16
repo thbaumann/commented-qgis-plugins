@@ -1,0 +1,154 @@
+<html>
+<head>
+<meta charset="utf-8">
+<title></title>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
+<script src="https://rawgit.com/google/code-prettify/master/loader/run_prettify.js?autoload=true&amp;skin=desert&amp;lang=css" defer></script>
+<body>
+<pre class="prettyprint">
+from builtins import range
+import os
+import fnmatch
+
+'''
+Different imports to allow the plugin to work correctly in different versions
+of QGIS
+'''
+try:
+    from qgis.core import  <a href='http://geoapis.sourcepole.com/pyqt/qgis'>QGis</a>
+except ImportError:
+    from qgis.core import  Qgis as <a href='http://geoapis.sourcepole.com/pyqt/qgis'>QGis</a>
+
+if <a href='http://geoapis.sourcepole.com/pyqt/qgis'>QGis</a>.QGIS_VERSION_INT < 29900:
+    from qgis.core import <a href='http://geoapis.sourcepole.com/qgispyapi/qgsmarkersymbolv2'>QgsMarkerSymbolV2</a>, <a href='http://geoapis.sourcepole.com/qgispyapi/qgssvgmarkersymbollayerv2'>QgsSvgMarkerSymbolLayerV2</a>
+else:
+    from qgis.core import QgsMarkerSymbol as <a href='http://geoapis.sourcepole.com/qgispyapi/qgsmarkersymbolv2'>QgsMarkerSymbolV2</a>
+    from qgis.core import QgsSvgMarkerSymbolLayer as <a href='http://geoapis.sourcepole.com/qgispyapi/qgssvgmarkersymbollayerv2'>QgsSvgMarkerSymbolLayerV2</a>
+
+
+def symbolForCode(code, size):
+    '''
+    This method returns the marker corresponding to a given MIL-STD-2525 code
+    '''
+    try:    
+        '''Here we create the marker symbol instance'''    
+        symbol = <a href='http://geoapis.sourcepole.com/qgispyapi/qgsmarkersymbolv2'>QgsMarkerSymbolV2</a>()
+        '''
+        A symbol in QGIS, for all types of geometries (in this case it's a 
+        point symbol), is composed of a set of symbol layers.
+        The default symbol contains one default layer. We do not want it, so 
+        we remove all the previous symbol layers.
+        '''
+
+        for i in range(symbol.<a href='http://geoapis.sourcepole.com/qgispyapi/qgssymbolv2#QgsSymbolV2.symbolLayerCount'>symbolLayerCount</a>()):
+            symbol.<a href='http://geoapis.sourcepole.com/qgispyapi/qgssymbolv2#QgsSymbolV2.takeSymbolLayer'>takeSymbolLayer</a>(0)
+
+        '''
+        Now we just take the different parts of the MIL-STD-2525 code and
+        convert it into a symbol layer. Is symbol layer is created from a
+        corresponding SVG file, and by adding all of the to the marker symbol, 
+        we get the compound marker to use.
+        '''
+        echelonCode = code[3] + code[8:10]
+        echelonLayer = getSymbolLayer('Echelon', echelonCode, size)
+        if echelonLayer is not None:
+            symbol.<a href='http://geoapis.sourcepole.com/qgispyapi/qgssymbolv2#QgsSymbolV2.insertSymbolLayer'>insertSymbolLayer</a>(0, echelonLayer)
+     
+        amplifierCode = code[3] + code[8:10]
+        amplifierLayer = getSymbolLayer('Amplifier', amplifierCode, size)
+        if amplifierLayer is not None:
+            symbol.<a href='http://geoapis.sourcepole.com/qgispyapi/qgssymbolv2#QgsSymbolV2.insertSymbolLayer'>insertSymbolLayer</a>(0, amplifierLayer)
+    
+        hqtffdCode = code[3:6] + code[7]
+        hqtffdLayer = getSymbolLayer('HQTFFD', hqtffdCode, size)
+        if hqtffdLayer is not None:
+            symbol.<a href='http://geoapis.sourcepole.com/qgispyapi/qgssymbolv2#QgsSymbolV2.insertSymbolLayer'>insertSymbolLayer</a>(0, hqtffdLayer)
+
+        ocaCode = code[2:7] + '2'
+        ocaLayer = getSymbolLayer('OCA', ocaCode, size)
+        if ocaLayer is not None:
+            symbol.<a href='http://geoapis.sourcepole.com/qgispyapi/qgssymbolv2#QgsSymbolV2.insertSymbolLayer'>insertSymbolLayer</a>(0, ocaLayer)
+
+        mainCode = code[4:6] + code[10:16]
+        mainLayer = getSymbolLayer('Appendices', mainCode, size)
+        if mainLayer is not None:
+            symbol.<a href='http://geoapis.sourcepole.com/qgispyapi/qgssymbolv2#QgsSymbolV2.insertSymbolLayer'>insertSymbolLayer</a>(0, mainLayer)
+
+        modifier1Code = code[4:6] + code[16:18] + '1'
+        modifier1Layer = getSymbolLayer('Appendices', modifier1Code, size)
+        if modifier1Layer is not None:
+            symbol.<a href='http://geoapis.sourcepole.com/qgispyapi/qgssymbolv2#QgsSymbolV2.insertSymbolLayer'>insertSymbolLayer</a>(0, modifier1Layer)
+
+        modifier2Code = code[4:6] + code[18:20] + '2'
+        modifier2Layer = getSymbolLayer('Appendices', modifier2Code, size)
+        if modifier2Layer is not None:
+            symbol.<a href='http://geoapis.sourcepole.com/qgispyapi/qgssymbolv2#QgsSymbolV2.insertSymbolLayer'>insertSymbolLayer</a>(0, modifier2Layer)
+
+        frameCode = '%s_%s_%s' % (code[2], code[3:6], code[0])
+        frameLayer = getSymbolLayer('Frames', frameCode, size)
+        if frameLayer is not None:
+            symbol.<a href='http://geoapis.sourcepole.com/qgispyapi/qgssymbolv2#QgsSymbolV2.insertSymbolLayer'>insertSymbolLayer</a>(0, frameLayer)
+
+        if symbol.<a href='http://geoapis.sourcepole.com/qgispyapi/qgssymbolv2#QgsSymbolV2.symbolLayerCount'>symbolLayerCount</a>() == 0:
+            symbol = None
+    except Exception as e:
+        symbol = None
+
+    return symbol
+
+
+def getSymbolLayer(folder, svg, size):
+    '''
+    Returns a symbol layer correspoding to a given filename
+    '''
+    svg = svg + '.svg'
+    root = os.path.join(os.path.dirname(__file__), 'svg', folder)
+    filepath = None
+    '''
+    Find the file in the folder where all subsymbol SVGs are stored, from the 
+    passed filename.
+    '''
+    for base, dirs, files in os.walk(root):
+        matching = fnmatch.<a href="javascript://" data-toggle="popover" title="filter" data-content="<ul><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsaggregatecalculator#QgsAggregateCalculator.filter'>QgsAggregateCalculator.filter()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgscategorizedsymbolrendererv2#QgsCategorizedSymbolRendererV2.filter'>QgsCategorizedSymbolRendererV2.filter()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsrulebasedrendererv2#QgsRuleBasedRendererV2.filter'>QgsRuleBasedRendererV2.filter()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsfeaturerendererv2#QgsFeatureRendererV2.filter'>QgsFeatureRendererV2.filter()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsfilewidget#QgsFileWidget.filter'>QgsFileWidget.filter()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qdir#filter'>QDir.filter()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qdirmodel#filter'>QDirModel.filter()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qfilesystemmodel#filter'>QFileSystemModel.filter()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qfiledialog#filter'>QFileDialog.filter()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qfilesystemmodel#filter'>QFileSystemModel.filter()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qdirmodel#filter'>QDirModel.filter()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qfiledialog#filter'>QFileDialog.filter()</a></li></ul>">filter</a>(files, svg)
+        if matching:
+            filepath = os.path.join(base, matching[0])
+            break
+    '''
+    Create the symbol layer from the SVG file
+    '''
+    if filepath is not None:
+        symbolLayer = <a href='http://geoapis.sourcepole.com/qgispyapi/qgssvgmarkersymbollayerv2'>QgsSvgMarkerSymbolLayerV2</a>()
+        symbolLayer.<a href="javascript://" data-toggle="popover" title="setPath" data-content="<ul><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsdataitem#QgsDataItem.setPath'>QgsDataItem.setPath()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgssvgmarkersymbollayerv2#QgsSvgMarkerSymbolLayerV2.setPath'>QgsSvgMarkerSymbolLayerV2.setPath()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qdir#setPath'>QDir.setPath()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qsettings#setPath'>QSettings.setPath()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qurl#setPath'>QUrl.setPath()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qgraphicspathitem#setPath'>QGraphicsPathItem.setPath()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qgraphicspathitem#setPath'>QGraphicsPathItem.setPath()</a></li></ul>">setPath</a>(filepath)
+        '''
+        This tells QGIS that the size is expressed in pixels, so the marker
+        would be rendered at the same size in the screen for all zoom levels. 
+        To have a marker that is rendered at a different size depending on the
+        scale, you can use <a href='http://geoapis.sourcepole.com/qgispyapi/qgssymbolv2'>QgsSymbolV2</a>.MapUnit as the size unit.
+        '''
+        symbolLayer.<a href="javascript://" data-toggle="popover" title="setSizeUnit" data-content="<ul><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsmarkersymbollayerv2#QgsMarkerSymbolLayerV2.setSizeUnit'>QgsMarkerSymbolLayerV2.setSizeUnit()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsmarkersymbolv2#QgsMarkerSymbolV2.setSizeUnit'>QgsMarkerSymbolV2.setSizeUnit()</a></li></ul>">setSizeUnit</a>(<a href='http://geoapis.sourcepole.com/qgispyapi/qgssymbolv2'>QgsSymbolV2</a>.Pixel)
+        symbolLayer.<a href="javascript://" data-toggle="popover" title="setSize" data-content="<ul><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsmarkersymbollayerv2#QgsMarkerSymbolLayerV2.setSize'>QgsMarkerSymbolLayerV2.setSize()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsmarkersymbolv2#QgsMarkerSymbolV2.setSize'>QgsMarkerSymbolV2.setSize()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgslabelcomponent#QgsLabelComponent.setSize'>QgsLabelComponent.setSize()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgslabelattributes#QgsLabelAttributes.setSize'>QgsLabelAttributes.setSize()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgssvgmarkersymbollayerv2widget#QgsSvgMarkerSymbolLayerV2Widget.setSize'>QgsSvgMarkerSymbolLayerV2Widget.setSize()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgssimplemarkersymbollayerv2widget#QgsSimpleMarkerSymbolLayerV2Widget.setSize'>QgsSimpleMarkerSymbolLayerV2Widget.setSize()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsfontmarkersymbollayerv2widget#QgsFontMarkerSymbolLayerV2Widget.setSize'>QgsFontMarkerSymbolLayerV2Widget.setSize()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qfsfileengine#setSize'>QFSFileEngine.setSize()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qabstractfileengine#setSize'>QAbstractFileEngine.setSize()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qrectf#setSize'>QRectF.setSize()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qrect#setSize'>QRect.setSize()</a></li></ul>">setSize</a>(size)
+        return symbolLayer
+    else:
+        return None
+
+
+def getDefaultSymbol(size):
+    symbol = <a href='http://geoapis.sourcepole.com/qgispyapi/qgsmarkersymbolv2'>QgsMarkerSymbolV2</a>()
+    symbolLayer = <a href='http://geoapis.sourcepole.com/qgispyapi/qgssvgmarkersymbollayerv2'>QgsSvgMarkerSymbolLayerV2</a>()
+    symbolLayer.<a href="javascript://" data-toggle="popover" title="setPath" data-content="<ul><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsdataitem#QgsDataItem.setPath'>QgsDataItem.setPath()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgssvgmarkersymbollayerv2#QgsSvgMarkerSymbolLayerV2.setPath'>QgsSvgMarkerSymbolLayerV2.setPath()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qdir#setPath'>QDir.setPath()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qsettings#setPath'>QSettings.setPath()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qurl#setPath'>QUrl.setPath()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qgraphicspathitem#setPath'>QGraphicsPathItem.setPath()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qgraphicspathitem#setPath'>QGraphicsPathItem.setPath()</a></li></ul>">setPath</a>(
+        os.path.join(os.path.dirname(__file__), 'svg', 'question.svg'))
+    symbolLayer.<a href="javascript://" data-toggle="popover" title="setSizeUnit" data-content="<ul><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsmarkersymbollayerv2#QgsMarkerSymbolLayerV2.setSizeUnit'>QgsMarkerSymbolLayerV2.setSizeUnit()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsmarkersymbolv2#QgsMarkerSymbolV2.setSizeUnit'>QgsMarkerSymbolV2.setSizeUnit()</a></li></ul>">setSizeUnit</a>(<a href='http://geoapis.sourcepole.com/qgispyapi/qgssymbolv2'>QgsSymbolV2</a>.Pixel)
+    symbolLayer.<a href="javascript://" data-toggle="popover" title="setSize" data-content="<ul><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsmarkersymbollayerv2#QgsMarkerSymbolLayerV2.setSize'>QgsMarkerSymbolLayerV2.setSize()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsmarkersymbolv2#QgsMarkerSymbolV2.setSize'>QgsMarkerSymbolV2.setSize()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgslabelcomponent#QgsLabelComponent.setSize'>QgsLabelComponent.setSize()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgslabelattributes#QgsLabelAttributes.setSize'>QgsLabelAttributes.setSize()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgssvgmarkersymbollayerv2widget#QgsSvgMarkerSymbolLayerV2Widget.setSize'>QgsSvgMarkerSymbolLayerV2Widget.setSize()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgssimplemarkersymbollayerv2widget#QgsSimpleMarkerSymbolLayerV2Widget.setSize'>QgsSimpleMarkerSymbolLayerV2Widget.setSize()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsfontmarkersymbollayerv2widget#QgsFontMarkerSymbolLayerV2Widget.setSize'>QgsFontMarkerSymbolLayerV2Widget.setSize()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qfsfileengine#setSize'>QFSFileEngine.setSize()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qabstractfileengine#setSize'>QAbstractFileEngine.setSize()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qrectf#setSize'>QRectF.setSize()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qrect#setSize'>QRect.setSize()</a></li></ul>">setSize</a>(size)
+    symbol.<a href='http://geoapis.sourcepole.com/qgispyapi/qgssymbolv2#QgsSymbolV2.insertSymbolLayer'>insertSymbolLayer</a>(0, symbolLayer)
+    return symbol
+
+</pre>
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>
+<script>
+$(document).ready(function(){
+    $('[data-toggle="popover"]').popover({html:true}); 
+});
+</script>
+</body>

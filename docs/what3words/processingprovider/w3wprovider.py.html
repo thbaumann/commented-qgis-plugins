@@ -1,0 +1,59 @@
+<html>
+<head>
+<meta charset="utf-8">
+<title></title>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
+<script src="https://rawgit.com/google/code-prettify/master/loader/run_prettify.js?autoload=true&amp;skin=desert&amp;lang=css" defer></script>
+<body>
+<pre class="prettyprint">
+import os
+from qgis.PyQt.QtGui import <a href='http://geoapis.sourcepole.com/pyqt/qicon'>QIcon</a>
+
+from processing.core.AlgorithmProvider import AlgorithmProvider
+
+from what3words.processingprovider.add3wordsfield import Add3WordsFieldAlgorithm
+
+pluginPath = os.path.<a href="javascript://" data-toggle="popover" title="split" data-content="<ul><li><a href='http://geoapis.sourcepole.com/pyqt/qbytearray#split'>QByteArray.split()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qitemselection#split'>QItemSelection.split()</a></li></ul>">split</a>(os.path.dirname(__file__))[0]
+
+
+class W3WProvider(AlgorithmProvider):
+    '''The provider that contains the w3w algorithms to add to Processing'''
+
+    def __init__(self):
+        AlgorithmProvider.__init__(self)
+
+        self.activate = True
+
+        # Load algorithms
+        self.alglist = [Add3WordsFieldAlgorithm()]
+        for alg in self.alglist:
+            alg.provider = self
+
+    def initializeSettings(self):
+        AlgorithmProvider.initializeSettings(self)
+
+    def unload(self):
+        AlgorithmProvider.<a href="javascript://" data-toggle="popover" title="unload" data-content="<ul><li><a href='http://geoapis.sourcepole.com/pyqt/qlibrary#unload'>QLibrary.unload()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qpluginloader#unload'>QPluginLoader.unload()</a></li></ul>">unload</a>(self)
+
+    def getName(self):
+        return 'what3words'
+
+    def getDescription(self):
+        return 'what3words tools'
+
+    def getIcon(self):
+        return <a href='http://geoapis.sourcepole.com/pyqt/qicon'>QIcon</a>(os.path.join(pluginPath, "icons", "w3w.png"))
+
+    def _loadAlgorithms(self):
+        self.algs = self.alglist
+
+</pre>
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>
+<script>
+$(document).ready(function(){
+    $('[data-toggle="popover"]').popover({html:true}); 
+});
+</script>
+</body>

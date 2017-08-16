@@ -1,0 +1,66 @@
+<html>
+<head>
+<meta charset="utf-8">
+<title></title>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
+<script src="https://rawgit.com/google/code-prettify/master/loader/run_prettify.js?autoload=true&amp;skin=desert&amp;lang=css" defer></script>
+<body>
+<pre class="prettyprint">
+# -*- coding: utf-8 -*-
+#
+# (c) 2016 Boundless, http://boundlessgeo.com
+# This code is licensed under the GPL 2.0 license.
+#
+
+# Tests for the QGIS Tester plugin. To know more see
+# https://github.com/boundlessgeo/qgis-tester-plugin
+
+import os
+
+from qgis.utils import iface, plugins
+from qgis.core import <a href='http://geoapis.sourcepole.com/qgispyapi/qgsmaplayerregistry'>QgsMapLayerRegistry</a>, <a href='http://geoapis.sourcepole.com/qgispyapi/qgspoint'>QgsPoint</a>
+
+def functionalTests():
+    try:
+        from qgistester.test import Test
+        from qgistester.utils import loadLayer
+    except:
+        return []
+
+    def _loadLayer():
+        layerfile = os.path.join(os.path.dirname(__file__), "w3w.shp")
+        layer = loadLayer(layerfile)
+        <a href='http://geoapis.sourcepole.com/qgispyapi/qgsmaplayerregistry'>QgsMapLayerRegistry</a>.<a href="javascript://" data-toggle="popover" title="instance" data-content="<ul><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsproviderregistry#QgsProviderRegistry.instance'>QgsProviderRegistry.instance()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qcoreapplication#instance'>QCoreApplication.instance()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsauthmanager#QgsAuthManager.instance'>QgsAuthManager.instance()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsdataitemproviderregistry#QgsDataItemProviderRegistry.instance'>QgsDataItemProviderRegistry.instance()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsruntimeprofiler#QgsRuntimeProfiler.instance'>QgsRuntimeProfiler.instance()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsmessagelog#QgsMessageLog.instance'>QgsMessageLog.instance()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgscoordinatetransformcache#QgsCoordinateTransformCache.instance'>QgsCoordinateTransformCache.instance()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsnetworkaccessmanager#QgsNetworkAccessManager.instance'>QgsNetworkAccessManager.instance()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsproject#QgsProject.instance'>QgsProject.instance()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsgpsconnectionregistry#QgsGPSConnectionRegistry.instance'>QgsGPSConnectionRegistry.instance()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgssvgcache#QgsSvgCache.instance'>QgsSvgCache.instance()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsrendererv2registry#QgsRendererV2Registry.instance'>QgsRendererV2Registry.instance()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgscrscache#QgsCRSCache.instance'>QgsCRSCache.instance()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgscredentials#QgsCredentials.instance'>QgsCredentials.instance()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgssymbollayerv2registry#QgsSymbolLayerV2Registry.instance'>QgsSymbolLayerV2Registry.instance()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgspainteffectregistry#QgsPaintEffectRegistry.instance'>QgsPaintEffectRegistry.instance()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgspluginlayerregistry#QgsPluginLayerRegistry.instance'>QgsPluginLayerRegistry.instance()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgscolorschemeregistry#QgsColorSchemeRegistry.instance'>QgsColorSchemeRegistry.instance()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsmaplayerregistry#QgsMapLayerRegistry.instance'>QgsMapLayerRegistry.instance()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgseditorwidgetregistry#QgsEditorWidgetRegistry.instance'>QgsEditorWidgetRegistry.instance()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsmaplayeractionregistry#QgsMapLayerActionRegistry.instance'>QgsMapLayerActionRegistry.instance()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgslayertreeembeddedwidgetregistry#QgsLayerTreeEmbeddedWidgetRegistry.instance'>QgsLayerTreeEmbeddedWidgetRegistry.instance()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsshortcutsmanager#QgsShortcutsManager.instance'>QgsShortcutsManager.instance()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qabstracteventdispatcher#instance'>QAbstractEventDispatcher.instance()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qcoreapplication#instance'>QCoreApplication.instance()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qpluginloader#instance'>QPluginLoader.instance()</a></li></ul>">instance</a>().<a href='http://geoapis.sourcepole.com/qgispyapi/qgsmaplayerregistry#QgsMapLayerRegistry.addMapLayer'>addMapLayer</a>(layer)
+
+    def _setTool():
+        plugins["what3words"].setTool()
+
+    def _zoomTo():
+        plugins["what3words"].zoomTo()
+
+    w3wTest = Test("Test w3w")
+    w3wTest.addStep("Load layer", _loadLayer)
+    w3wTest.addStep("Select map tool", _setTool)
+    w3wTest.addStep("Click within the layer polygon and verify that the computed 3 coords are 'healings.distorting.harsher'", isVerifyStep=True)
+    w3wTest.addStep("Move map canvas", lambda: iface.<a href="javascript://" data-toggle="popover" title="mapCanvas" data-content="<ul><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgslayertreemapcanvasbridge#QgsLayerTreeMapCanvasBridge.mapCanvas'>QgsLayerTreeMapCanvasBridge.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsdatadefinedvaluedialog#QgsDataDefinedValueDialog.mapCanvas'>QgsDataDefinedValueDialog.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsrendererv2widget#QgsRendererV2Widget.mapCanvas'>QgsRendererV2Widget.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgssymbollayerv2widget#QgsSymbolLayerV2Widget.mapCanvas'>QgsSymbolLayerV2Widget.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsattributetablefiltermodel#QgsAttributeTableFilterModel.mapCanvas'>QgsAttributeTableFilterModel.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsdatadefinedassistant#QgsDataDefinedAssistant.mapCanvas'>QgsDataDefinedAssistant.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgisinterface#QgisInterface.mapCanvas'>QgisInterface.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgssymbolslistwidget#QgsSymbolsListWidget.mapCanvas'>QgsSymbolsListWidget.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsrasterrendererwidget#QgsRasterRendererWidget.mapCanvas'>QgsRasterRendererWidget.mapCanvas()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsrasterminmaxwidget#QgsRasterMinMaxWidget.mapCanvas'>QgsRasterMinMaxWidget.mapCanvas()</a></li></ul>">mapCanvas</a>().<a href="javascript://" data-toggle="popover" title="setCenter" data-content="<ul><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgslabelcomponent#QgsLabelComponent.setCenter'>QgsLabelComponent.setCenter()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsvertexmarker#QgsVertexMarker.setCenter'>QgsVertexMarker.setCenter()</a></li><li><a href='http://geoapis.sourcepole.com/qgispyapi/qgsmapcanvas#QgsMapCanvas.setCenter'>QgsMapCanvas.setCenter()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qconicalgradient#setCenter'>QConicalGradient.setCenter()</a></li><li><a href='http://geoapis.sourcepole.com/pyqt/qradialgradient#setCenter'>QRadialGradient.setCenter()</a></li></ul>">setCenter</a>(<a href='http://geoapis.sourcepole.com/qgispyapi/qgspoint'>QgsPoint</a>(0, 0)))
+    w3wTest.addStep("Open panel", _zoomTo)
+    w3wTest.addStep("Enter 'healings.distorting.harsher' and click on 'zoom to'. Verify it zooms to the polygon layer")
+    w3wTest.addStep("Click on 'remove marker' and verify it removes the marker")
+    return [w3wTest]
+
+
+def unitTests():
+    _tests = []
+    #add unit tests with _tests.<a href='http://geoapis.sourcepole.com/qgispyapi/qgsfields#QgsFields.extend'>extend</a>(test_suite)
+    return _tests
+
+</pre>
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>
+<script>
+$(document).ready(function(){
+    $('[data-toggle="popover"]').popover({html:true}); 
+});
+</script>
+</body>

@@ -6,8 +6,8 @@ Some plugins might have been modified from their regular versions, to make them 
 
 Plugins in this repo might not be functional (do not try to install them), since some of them require dependencies, and they havent been added, to keep the number of files to a minimum and make the code and file structure more readable.
 
-Here is a list of the plugins contained in this repo, with a short description of their main features and their main areas of interest
+The ``_build`` folder contains scripts to create a website from the plugin source files, which can be used to browse the code in a practical and helpful way. It includes syntax coloring, and methods and classes from QGIS and PyQt used in the code are shown with hyperlinks to the corresponding documentation that explains them.
 
-- *what3words*: This plugin uses a *map tool* to capture user interaction in the map canvas. It also features a *Processing provider*, so the capabilities of the plugin (converting coordinates into what3words coordinates) are available as a Processing algorithm and can be used in the Processing elements (toolbox, modeler, batch interface, etc.)
+You can browse a live version of that website [here](https://volaya.github.io/qgis-commented-plugins).
 
 
