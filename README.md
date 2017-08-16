@@ -8,6 +8,6 @@ Plugins in this repo might not be functional (do not try to install them), since
 
 The ``_build`` folder contains scripts to create a website from the plugin source files, which can be used to browse the code in a practical and helpful way. It includes syntax coloring, and methods and classes from QGIS and PyQt used in the code are shown with hyperlinks to the corresponding documentation that explains them.
 
-You can browse a live version of that website [here](https://volaya.github.io/qgis-commented-plugins).
+You can browse a live version of that website [here](https://volaya.github.io/commented-qgis-plugins/).
 
 
